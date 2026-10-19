@@ -1,0 +1,6 @@
+Images de la vision (vision.html) — noms exacts, en .jpg :
+objet-1.jpg  l'horloge arrêtée à 3:14
+objet-2.jpg  la clé
+objet-3.jpg  le livre + la Terre en coupe
+objet-4.jpg  le furet
+parasite-1.jpg, parasite-2.jpg, parasite-3.jpg  (facultatifs)

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>…</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;
+    font-family:"Courier New",monospace;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  #stage{position:fixed;inset:0;background:#000;cursor:pointer;touch-action:manipulation}
+  #portrait{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center 30%;
+    background-color:#0b0b0b;transform:scale(1)}
+  #flash{position:absolute;inset:0;z-index:3;background:#050000;opacity:0;overflow:hidden}
+  .bande{position:absolute;inset:0;background-size:cover;background-position:center;will-change:transform}
+  #pulse{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(120,0,0,.35);mix-blend-mode:multiply;opacity:0}
+  #lignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
+    background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
+  #vignette{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.85)}
+  #invite{position:absolute;left:0;right:0;bottom:calc(28px + env(safe-area-inset-bottom));z-index:8;text-align:center;
+    color:#8a2a32;font-size:12px;letter-spacing:.35em;text-transform:uppercase;animation:respire 2.4s ease-in-out infinite;pointer-events:none}
+  @keyframes respire{0%,100%{opacity:.25}50%{opacity:.85}}
+  #fin{position:absolute;inset:0;z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    background:rgba(0,0,0,.82);text-align:center;padding:24px}
+  #fin.on{display:flex;animation:fondu 2.5s ease}
+  @keyframes fondu{from{opacity:0}to{opacity:1}}
+  #fin p{color:#b9a3a5;font-family:Georgia,serif;font-style:italic;font-size:18px;line-height:1.5;max-width:320px;margin:0}
+  #fil{display:none;color:#ead6d6;text-decoration:none;font-size:12px;letter-spacing:.32em;text-transform:uppercase;
+    padding:14px 26px;border:1px solid #b3101d;background:rgba(74,6,16,.35)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="portrait"></div>
+  <div id="flash"><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div></div>
+  <div id="pulse"></div>
+  <div id="lignes"></div>
+  <div id="vignette"></div>
+  <div id="invite">touche l'écran</div>
+  <div id="fin"><p id="finTexte"></p><a id="fil" href="index.html">Suivre le fil</a></div>
+</div>
+<audio id="son" src="assets/son-vision.mp3" preload="auto"></audio>
+
+<script>
+/* ============================================================
+   RÉGLAGES — les seules lignes à modifier
+   ============================================================ */
+// Les objets-clés : montrés plus longtemps et moins brouillés, pour qu'on puisse les lire.
+const OBJETS = [
+  'images/vision/objet-1.jpg',   // l'horloge arrêtée à 3:14
+  'images/vision/objet-2.jpg',   // la clé
+  'images/vision/objet-3.jpg',   // le livre + la Terre en coupe
+  'images/vision/objet-4.jpg'    // le furet
+];
+// Images parasites : très courtes et très brouillées, pour l'ambiance. Facultatives.
+const PARASITES = [
+  'images/vision/parasite-1.jpg',
+  'images/vision/parasite-2.jpg',
+  'images/vision/parasite-3.jpg'
+];
+const PORTRAIT_AVANT = 'images/portrait-avant.jpg';
+const PORTRAIT_APRES = 'images/portrait-apres.jpg';
+const DUREE_FLASH = 0;           // 0 = calé sur le son (6 s) ; ou en millisecondes, ex. 9000, pour laisser plus de temps aux objets
+const PASSAGES_OBJETS = 2;        // combien de fois chaque objet revient pendant le flash
+const VISIONNAGES_MAX = 2;        // 1 = une seule fois, 2 = elle peut la revoir une fois, 0 = illimité
+const LIEN_DEDALE = true;         // affiche « Suivre le fil » vers le Dédale à la fin (false pour le cacher)
+const CLE_MEMOIRE = 'toile.vision.dedale'; // change ce nom pour une prochaine vision : le compteur repart à zéro
+
+/* ============================================================ */
+const $ = id => document.getElementById(id);
+const portrait = $('portrait'), flash = $('flash'), bandes = [...flash.querySelectorAll('.bande')];
+const pulse = $('pulse'), lignes = $('lignes'), son = $('son');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ZOOM = 2.6;
+let joue = false;
+
+function vus(){ try { return +localStorage.getItem(CLE_MEMOIRE) || 0; } catch(e){ return 0; } }
+function noterVu(){ try { localStorage.setItem(CLE_MEMOIRE, vus() + 1); } catch(e){} }
+const restants = () => VISIONNAGES_MAX === 0 ? Infinity : VISIONNAGES_MAX - vus();
+
+// Précharge : une image absente est simplement ignorée.
+function charger(url){ return new Promise(ok => { const i = new Image(); i.onload = () => ok(url); i.onerror = () => ok(null); i.src = url; }); }
+let objets = [], parasites = [];
+const pret = Promise.all([Promise.all(OBJETS.map(charger)), Promise.all(PARASITES.map(charger)), charger(PORTRAIT_AVANT), charger(PORTRAIT_APRES)])
+  .then(([o,p]) => { objets = o.filter(Boolean); parasites = p.filter(Boolean); });
+
+portrait.style.backgroundImage = `url(${PORTRAIT_AVANT})`;
+bandes.forEach((b,i) => { const h = 100 / bandes.length; b.style.clipPath = `inset(${i*h}% 0 ${100-(i+1)*h}% 0)`; });
+
+if (restants() <= 0) finir(true);
+
+// Construit la suite d'images : objets dans l'ordre, chacun précédé d'éclats parasites.
+function construireSuite(){
+  const suite = [];
+  for (let passage = 0; passage < PASSAGES_OBJETS; passage++){
+    objets.forEach((url, i) => {
+      if (parasites.length) suite.push({ url: parasites[(i + passage) % parasites.length], cle: false });
+      suite.push({ url, cle: true });
+    });
+  }
+  if (parasites.length) suite.push({ url: parasites[0], cle: false });
+  return suite;
+}
+function duree(){ return new Promise(ok => {
+  if (son.readyState >= 1 && son.duration > 0) return ok(son.duration * 1000);
+  son.addEventListener('loadedmetadata', () => ok((son.duration || 6) * 1000), { once: true });
+  son.addEventListener('error', () => ok(6000), { once: true });
+  son.load();
+}); }
+
+async function jouer(){
+  if (joue || restants() <= 0) return;
+  joue = true; $('invite').style.display = 'none';
+  try { document.documentElement.requestFullscreen && await document.documentElement.requestFullscreen(); } catch(e){}
+  son.play().then(() => { son.pause(); son.currentTime = 0; }).catch(() => {}); // déverrouille le son sur iOS
+  await pret;
+  noterVu();
+
+  // 1) Zoom avant brutal
+  portrait.style.transition = 'none'; portrait.style.transform = 'scale(1)'; portrait.style.backgroundImage = `url(${PORTRAIT_AVANT})`;
+  await sleep(40);
+  portrait.style.transition = 'transform 700ms cubic-bezier(.7,0,.9,.4)';
+  requestAnimationFrame(() => portrait.style.transform = `scale(${ZOOM})`);
+  await sleep(700);
+
+  // 2) Le flash, calé sur la durée du son. Objets : 3 parts du temps ; parasites : 1 part.
+  const total = DUREE_FLASH > 0 ? DUREE_FLASH : await duree();
+  const suite = construireSuite();
+  const parts = suite.reduce((n, f) => n + (f.cle ? 3 : 1), 0) || 1;
+  const unite = total / parts;
+  try { son.currentTime = 0; son.play().catch(() => {}); } catch(e){}
+  try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
+  flash.style.transition = 'none'; flash.style.opacity = 1;
+  for (const [n, f] of suite.entries()){
+    bandes.forEach(b => {
+      b.style.backgroundImage = `url(${f.url})`;
+      const fort = f.cle ? Math.random() < .15 : Math.random() < .55;
+      const dx = fort ? (Math.random() - .5) * (f.cle ? 30 : 90) : (Math.random() - .5) * (f.cle ? 4 : 12);
+      b.style.transform = `translateX(${dx}px)`;
+    });
+    flash.style.transform = `translate(${(Math.random()-.5)*(f.cle?6:14)}px,${(Math.random()-.5)*(f.cle?4:8)}px)`;
+    flash.style.filter = f.cle ? 'contrast(1.1) saturate(1.05)' : `contrast(${1.2+Math.random()*.4}) saturate(${1.3+Math.random()*.5}) hue-rotate(${(Math.random()-.5)*14}deg)`;
+    lignes.style.opacity = f.cle ? .1 : .2 + Math.random() * .3;
+    pulse.style.opacity = f.cle ? .25 : (n % 2 ? .6 : .3);
+    portrait.style.transform = `scale(${ZOOM}) translate(${(Math.random()-.5)*14}px,${(Math.random()-.5)*14}px)`;
+    if (f.cle){ await sleep(unite * 1.5); bandes.forEach(b => b.style.transform = `translateX(${(Math.random()-.5)*16}px)`); await sleep(unite * 1.5); }
+    else await sleep(unite);
+  }
+  flash.style.opacity = 0; flash.style.transform = 'none'; flash.style.filter = 'none';
+  lignes.style.opacity = 0; pulse.style.opacity = 0;
+
+  // 3) Zoom arrière sur « après »
+  portrait.style.backgroundImage = `url(${PORTRAIT_APRES})`;
+  portrait.style.transition = 'transform 900ms cubic-bezier(.16,1,.3,1)';
+  portrait.style.transform = 'scale(1)';
+  await sleep(2600);
+  finir(false);
+}
+
+function finir(dejaEpuise){
+  const r = restants();
+  $('finTexte').textContent = r > 0
+    ? 'La vision se retire. Elle reviendra peut-être une fois encore, si tu l\'appelles.'
+    : 'La vision s\'est dissipée. Ce que tu as vu, tu devras t\'en souvenir.';
+  if (LIEN_DEDALE) $('fil').style.display = 'inline-block';
+  $('fin').classList.add('on');
+  $('invite').style.display = 'none';
+  joue = false;
+  if (r > 0 && !dejaEpuise){
+    const rejouer = document.createElement('a'); rejouer.href = '#'; rejouer.textContent = 'Rappeler la vision';
+    rejouer.style.cssText = 'color:#8a2a32;font-size:11px;letter-spacing:.3em;text-transform:uppercase;text-decoration:none';
+    rejouer.onclick = e => { e.preventDefault(); e.stopPropagation(); $('fin').classList.remove('on'); rejouer.remove(); jouer(); };
+    $('fin').appendChild(rejouer);
+  }
+}
+$('fil').addEventListener('click', e => e.stopPropagation());
+$('fin').addEventListener('click', e => e.stopPropagation());
+$('stage').addEventListener('click', jouer);
+</script>
+</body>
+</html>
