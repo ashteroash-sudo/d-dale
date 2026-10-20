@@ -171,9 +171,26 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .son{position:fixed;left:14px;top:14px;z-index:40;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;color:var(--pale);padding:8px;border:1px solid rgba(179,16,29,.3)}
 @media (max-width:520px){.salle{grid-template-columns:repeat(3,1fr)}.case{width:40px;height:52px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important}}
+/* ---------- Vision d'introduction ---------- */
+#intro{position:fixed;inset:0;z-index:80;background:#000;display:none;overflow:hidden;transition:opacity 1.2s ease}
+#intro.on{display:block}
+#intro.part{opacity:0}
+#iPortrait{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center 30%;background-color:#0b0b0b;transform:scale(1)}
+#iFlash{position:absolute;inset:0;z-index:3;background:#050000;opacity:0;overflow:hidden}
+#iFlash .ib{position:absolute;inset:0;background-size:cover;background-position:center;will-change:transform}
+#iPulse{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(120,0,0,.35);mix-blend-mode:multiply;opacity:0}
+#iLignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
+#iVignette{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.85)}
 </style>
 </head>
 <body>
+<div id="intro" aria-hidden="true">
+  <div id="iPortrait"></div>
+  <div id="iFlash"><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div></div>
+  <div id="iPulse"></div><div id="iLignes"></div><div id="iVignette"></div>
+</div>
+<audio id="iSon" src="assets/son-vision.mp3" preload="auto"></audio>
 <div class="rougeur" id="rougeur"></div>
 <div id="fond"></div>
 <div id="ether"></div>
@@ -314,7 +331,82 @@ const INCANTATION = ['Ils t\'ont coupée du fil.', 'Ils ne t\'ont pas coupée du
 (function(){ const t = document.getElementById('incantation');
   INCANTATION.forEach((l,i) => { const s = document.createElement('span'); s.textContent = l; s.style.animationDelay = (0.8 + i*1.6) + 's'; t.appendChild(s); });
 })();
-document.getElementById('descendre').onclick = () => { demarrerCoeur(); entrer(); };
+/* ============ Vision d'introduction (à chaque descente) ============ */
+const VISION = {
+  objets: ['images/vision/objet-1.jpg','images/vision/objet-2.jpg','images/vision/objet-3.jpg','images/vision/objet-4.jpg'],
+  parasites: ['images/vision/parasite-1.jpg','images/vision/parasite-2.jpg','images/vision/parasite-3.jpg'],
+  avant: 'images/portrait-avant.jpg', apres: 'images/portrait-apres.jpg',
+  passages: 2, zoom: 2.6
+};
+let pauseCoeur = false;
+const lancerVision = (function(){
+  const g = id => document.getElementById(id);
+  const intro = g('intro'), portrait = g('iPortrait'), flash = g('iFlash'), pulse = g('iPulse'), lignes = g('iLignes'), son = g('iSon');
+  const bandes = [...flash.querySelectorAll('.ib')];
+  bandes.forEach((b,i) => { const h = 100 / bandes.length; b.style.clipPath = `inset(${i*h}% 0 ${100-(i+1)*h}% 0)`; });
+  const dors = ms => new Promise(r => setTimeout(r, ms));
+  const charger = url => new Promise(ok => { const i = new Image(); i.onload = () => ok(url); i.onerror = () => ok(null); i.src = url; });
+  let objets = [], parasites = [];
+  const pret = Promise.all([Promise.all(VISION.objets.map(charger)), Promise.all(VISION.parasites.map(charger)), charger(VISION.avant), charger(VISION.apres)])
+    .then(([o,p]) => { objets = o.filter(Boolean); parasites = p.filter(Boolean); });
+  const duree = () => new Promise(ok => {
+    if (son.readyState >= 1 && son.duration > 0) return ok(son.duration * 1000);
+    son.addEventListener('loadedmetadata', () => ok((son.duration || 6) * 1000), { once: true });
+    son.addEventListener('error', () => ok(6000), { once: true });
+    setTimeout(() => ok(6000), 2500);
+  });
+  return async function(){
+    // Déverrouille le son tout de suite, dans le geste de la joueuse.
+    try { son.muted = true; const pr = son.play(); if (pr) pr.then(() => { son.pause(); son.currentTime = 0; son.muted = false; }).catch(() => { son.muted = false; }); } catch(e){}
+    intro.classList.remove('part'); intro.classList.add('on');
+    portrait.style.transition = 'none'; portrait.style.transform = 'scale(1)'; portrait.style.backgroundImage = `url(${VISION.avant})`;
+    await Promise.race([pret, dors(4000)]);
+    if (!objets.length) { intro.classList.remove('on'); return; }
+    await dors(500);
+    portrait.style.transition = 'transform 700ms cubic-bezier(.7,0,.9,.4)';
+    requestAnimationFrame(() => portrait.style.transform = `scale(${VISION.zoom})`);
+    await dors(700);
+    const suite = [];
+    for (let k = 0; k < VISION.passages; k++) objets.forEach((url, i) => {
+      if (parasites.length) suite.push({ url: parasites[(i + k) % parasites.length], cle: false });
+      suite.push({ url, cle: true });
+    });
+    if (parasites.length) suite.push({ url: parasites[0], cle: false });
+    const unite = (await duree()) / (suite.reduce((n, f) => n + (f.cle ? 3 : 1), 0) || 1);
+    try { son.muted = false; son.currentTime = 0; son.play().catch(() => {}); } catch(e){}
+    try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
+    flash.style.transition = 'none'; flash.style.opacity = 1;
+    for (const [n, f] of suite.entries()){
+      bandes.forEach(b => {
+        b.style.backgroundImage = `url(${f.url})`;
+        const fort = f.cle ? Math.random() < .15 : Math.random() < .55;
+        b.style.transform = `translateX(${fort ? (Math.random() - .5) * (f.cle ? 30 : 90) : (Math.random() - .5) * (f.cle ? 4 : 12)}px)`;
+      });
+      flash.style.transform = `translate(${(Math.random()-.5)*(f.cle?6:14)}px,${(Math.random()-.5)*(f.cle?4:8)}px)`;
+      flash.style.filter = f.cle ? 'contrast(1.1) saturate(1.05)' : `contrast(${1.2+Math.random()*.4}) saturate(${1.3+Math.random()*.5}) hue-rotate(${(Math.random()-.5)*14}deg)`;
+      lignes.style.opacity = f.cle ? .1 : .2 + Math.random() * .3;
+      pulse.style.opacity = f.cle ? .25 : (n % 2 ? .6 : .3);
+      portrait.style.transform = `scale(${VISION.zoom}) translate(${(Math.random()-.5)*14}px,${(Math.random()-.5)*14}px)`;
+      if (f.cle){ await dors(unite * 1.5); bandes.forEach(b => b.style.transform = `translateX(${(Math.random()-.5)*16}px)`); await dors(unite * 1.5); }
+      else await dors(unite);
+    }
+    flash.style.opacity = 0; flash.style.transform = 'none'; flash.style.filter = 'none'; lignes.style.opacity = 0; pulse.style.opacity = 0;
+    portrait.style.backgroundImage = `url(${VISION.apres})`;
+    portrait.style.transition = 'transform 900ms cubic-bezier(.16,1,.3,1)';
+    portrait.style.transform = 'scale(1)';
+    await dors(2400);
+    intro.classList.add('part');
+    await dors(1200);
+    intro.classList.remove('on', 'part');
+  };
+})();
+let enDescente = false;
+document.getElementById('descendre').onclick = async () => {
+  if (enDescente) return; enDescente = true;
+  pauseCoeur = true; demarrerCoeur();
+  await lancerVision();
+  pauseCoeur = false; entrer(); enDescente = false;
+};
 
 /* ============ Battement (son synthétisé, pas de fichier) ============ */
 let ctx = null, coeurId = null, sonActif = true;
@@ -326,7 +418,7 @@ function demarrerCoeur(){
   if (ctx.state === 'suspended') ctx.resume();
   const b = document.getElementById('son'); b.style.display = 'block';
   if (coeurId) return;
-  coeurId = setInterval(() => { if (!sonActif) return; const t = ctx.currentTime; boum(t,60,.35); boum(t+.18,52,.22); }, 1400);
+  coeurId = setInterval(() => { if (!sonActif || pauseCoeur) return; const t = ctx.currentTime; boum(t,60,.35); boum(t+.18,52,.22); }, 1400);
 }
 function arreterCoeur(){ clearInterval(coeurId); coeurId = null; }
 document.getElementById('son').onclick = () => { sonActif = !sonActif; document.getElementById('son').textContent = sonActif ? '♥ son' : '♡ muet'; };
