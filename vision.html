@@ -62,9 +62,7 @@ const PORTRAIT_AVANT = 'images/portrait-avant.jpg';
 const PORTRAIT_APRES = 'images/portrait-apres.jpg';
 const DUREE_FLASH = 0;           // 0 = calé sur le son (6 s) ; ou en millisecondes, ex. 9000, pour laisser plus de temps aux objets
 const PASSAGES_OBJETS = 2;        // combien de fois chaque objet revient pendant le flash
-const VISIONNAGES_MAX = 2;        // 1 = une seule fois, 2 = elle peut la revoir une fois, 0 = illimité
 const LIEN_DEDALE = true;         // affiche « Suivre le fil » vers le Dédale à la fin (false pour le cacher)
-const CLE_MEMOIRE = 'toile.vision.dedale'; // change ce nom pour une prochaine vision : le compteur repart à zéro
 
 /* ============================================================ */
 const $ = id => document.getElementById(id);
@@ -74,9 +72,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ZOOM = 2.6;
 let joue = false;
 
-function vus(){ try { return +localStorage.getItem(CLE_MEMOIRE) || 0; } catch(e){ return 0; } }
-function noterVu(){ try { localStorage.setItem(CLE_MEMOIRE, vus() + 1); } catch(e){} }
-const restants = () => VISIONNAGES_MAX === 0 ? Infinity : VISIONNAGES_MAX - vus();
 
 // Précharge : une image absente est simplement ignorée.
 function charger(url){ return new Promise(ok => { const i = new Image(); i.onload = () => ok(url); i.onerror = () => ok(null); i.src = url; }); }
@@ -87,7 +82,6 @@ const pret = Promise.all([Promise.all(OBJETS.map(charger)), Promise.all(PARASITE
 portrait.style.backgroundImage = `url(${PORTRAIT_AVANT})`;
 bandes.forEach((b,i) => { const h = 100 / bandes.length; b.style.clipPath = `inset(${i*h}% 0 ${100-(i+1)*h}% 0)`; });
 
-if (restants() <= 0) finir(true);
 
 // Construit la suite d'images : objets dans l'ordre, chacun précédé d'éclats parasites.
 function construireSuite(){
@@ -109,12 +103,13 @@ function duree(){ return new Promise(ok => {
 }); }
 
 async function jouer(){
-  if (joue || restants() <= 0) return;
-  joue = true; $('invite').style.display = 'none';
-  try { document.documentElement.requestFullscreen && await document.documentElement.requestFullscreen(); } catch(e){}
-  son.play().then(() => { son.pause(); son.currentTime = 0; }).catch(() => {}); // déverrouille le son sur iOS
+  if (joue) return;
+  joue = true; $('invite').style.display = 'none'; $('fin').classList.remove('on');
+  // Le son doit être lancé tout de suite, dans le geste de la joueuse, sinon le téléphone le bloque.
+  try { son.muted = true; son.currentTime = 0; const pr = son.play(); if (pr) pr.then(() => { son.pause(); son.currentTime = 0; son.muted = false; }).catch(() => { son.muted = false; }); } catch(e){}
+  // Plein écran sans attendre : s'il est refusé (iPhone), la vision se lance quand même.
+  try { const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen; if (fs) { const r = fs.call(el); if (r && r.catch) r.catch(() => {}); } } catch(e){}
   await pret;
-  noterVu();
 
   // 1) Zoom avant brutal
   portrait.style.transition = 'none'; portrait.style.transform = 'scale(1)'; portrait.style.backgroundImage = `url(${PORTRAIT_AVANT})`;
@@ -128,7 +123,7 @@ async function jouer(){
   const suite = construireSuite();
   const parts = suite.reduce((n, f) => n + (f.cle ? 3 : 1), 0) || 1;
   const unite = total / parts;
-  try { son.currentTime = 0; son.play().catch(() => {}); } catch(e){}
+  try { son.muted = false; son.currentTime = 0; son.play().catch(() => {}); } catch(e){}
   try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
   flash.style.transition = 'none'; flash.style.opacity = 1;
   for (const [n, f] of suite.entries()){
@@ -157,24 +152,13 @@ async function jouer(){
   finir(false);
 }
 
-function finir(dejaEpuise){
-  const r = restants();
-  $('finTexte').textContent = r > 0
-    ? 'La vision se retire. Elle reviendra peut-être une fois encore, si tu l\'appelles.'
-    : 'La vision s\'est dissipée. Ce que tu as vu, tu devras t\'en souvenir.';
-  if (LIEN_DEDALE) $('fil').style.display = 'inline-block';
+function finir(){
+  $('finTexte').textContent = 'La vision se retire. Touche l\'écran pour la rappeler.';
+  $('fil').style.display = LIEN_DEDALE ? 'inline-block' : 'none';
   $('fin').classList.add('on');
-  $('invite').style.display = 'none';
   joue = false;
-  if (r > 0 && !dejaEpuise){
-    const rejouer = document.createElement('a'); rejouer.href = '#'; rejouer.textContent = 'Rappeler la vision';
-    rejouer.style.cssText = 'color:#8a2a32;font-size:11px;letter-spacing:.3em;text-transform:uppercase;text-decoration:none';
-    rejouer.onclick = e => { e.preventDefault(); e.stopPropagation(); $('fin').classList.remove('on'); rejouer.remove(); jouer(); };
-    $('fin').appendChild(rejouer);
-  }
 }
 $('fil').addEventListener('click', e => e.stopPropagation());
-$('fin').addEventListener('click', e => e.stopPropagation());
 $('stage').addEventListener('click', jouer);
 </script>
 </body>
