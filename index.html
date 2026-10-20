@@ -43,8 +43,37 @@ body::before{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:49
 .chiffre{font-family:var(--mono);font-size:.75rem;letter-spacing:.35em;color:var(--rouge);text-transform:uppercase}
 h1{font-weight:400;font-size:clamp(1.9rem,6vw,3.2rem);letter-spacing:.06em;color:var(--texte);text-shadow:0 0 18px rgba(255,43,60,.45)}
 .voix{font-style:italic;font-size:clamp(1.05rem,3.6vw,1.3rem);color:var(--pale);max-width:34rem;line-height:1.55}
-.terminal{font-family:var(--mono);font-size:.82rem;color:var(--vif);letter-spacing:.08em;line-height:1.9;text-align:left;max-width:32rem}
-.terminal span{display:block;opacity:0;animation:ligne .01s forwards}
+.incantation{font-style:italic;font-size:clamp(1.15rem,4vw,1.45rem);line-height:1.7;color:var(--texte);max-width:30rem}
+.incantation span{display:block;opacity:0;filter:blur(6px);animation:eclot 2.4s ease forwards}
+@keyframes eclot{to{opacity:1;filter:none}}
+.titre-seuil{font-size:clamp(2.6rem,10vw,4.6rem);letter-spacing:.18em;font-weight:400;color:var(--texte);
+  text-shadow:0 0 24px rgba(255,43,60,.55),0 0 2px rgba(255,43,60,.9)}
+.sceau{width:64px;opacity:.85;animation:tourne 40s linear infinite}
+@keyframes tourne{to{transform:rotate(360deg)}}
+
+/* Runes flottantes */
+#ether{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.rune-vol{position:absolute;opacity:0;filter:drop-shadow(0 0 6px rgba(255,43,60,.8)) blur(.4px);
+  animation:flotte var(--d) linear var(--r) infinite}
+@keyframes flotte{
+  0%{opacity:0;transform:translate(0,0) rotate(var(--a0)) scale(var(--s))}
+  15%{opacity:var(--o)}
+  50%{opacity:calc(var(--o) * .4)}
+  70%{opacity:var(--o)}
+  100%{opacity:0;transform:translate(var(--dx),-36vh) rotate(var(--a1)) scale(var(--s))}}
+
+/* Pensées captées */
+#pensees{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.pensee{position:absolute;max-width:min(70vw,320px);font-style:italic;font-size:clamp(.92rem,3vw,1.08rem);line-height:1.4;
+  color:#d9b3b6;opacity:0;letter-spacing:.02em;text-shadow:0 0 12px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9);
+  animation:capte var(--d) ease-in-out forwards}
+.pensee::before{content:"∴ ";color:var(--rouge);font-style:normal}
+@keyframes capte{0%{opacity:0;filter:blur(8px);transform:translateY(8px)}
+  18%{opacity:.62;filter:blur(0)}
+  30%{opacity:.5;filter:blur(.6px);transform:translateX(2px)}
+  32%{opacity:.62;filter:blur(0);transform:translateX(0)}
+  78%{opacity:.55;filter:blur(0)}
+  100%{opacity:0;filter:blur(10px);transform:translateY(-10px)}}
 
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .bouton{font-family:var(--mono);font-size:.85rem;letter-spacing:.3em;text-transform:uppercase;padding:14px 30px;
@@ -147,12 +176,16 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 <body>
 <div class="rougeur" id="rougeur"></div>
 <div id="fond"></div>
+<div id="ether"></div>
+<div id="pensees"></div>
 
 <!-- SEUIL -->
 <section class="ecran actif" id="seuil">
-  <p class="chiffre">canal ∴ toile</p>
-  <div class="terminal" id="term"></div>
-  <p class="voix">Le sang se souvient de ce que l'esprit a perdu.</p>
+  <svg class="sceau" viewBox="0 0 64 64" fill="none" stroke="#b3101d" stroke-width="1.2" aria-hidden="true">
+    <circle cx="32" cy="32" r="29"/><circle cx="32" cy="32" r="21" stroke-dasharray="2 4"/>
+    <path d="M32 3v58M3 32h58M11.5 11.5l41 41M52.5 11.5l-41 41" opacity=".5"/><circle cx="32" cy="32" r="4" fill="#ff2b3c" stroke="none"/></svg>
+  <h1 class="titre-seuil">Le Dédale</h1>
+  <div class="incantation" id="incantation"></div>
   <button class="bouton" id="descendre">Descendre</button>
 </section>
 
@@ -277,10 +310,9 @@ function entrer(){
 }
 
 /* ============ Seuil ============ */
-const lignes = ['> connexion au réseau ........ interrompue','> signal du sang ............. détecté','> stabilisation du canal ...... requise'];
-(function(){ const t = document.getElementById('term');
-  lignes.forEach((l,i) => { const s = document.createElement('span'); s.textContent = l; s.style.animationDelay = (0.6 + i*0.9) + 's'; t.appendChild(s); });
-  const st = document.createElement('style'); st.textContent='@keyframes ligne{to{opacity:1}}'; document.head.appendChild(st);
+const INCANTATION = ['Ils t\'ont coupée du fil.', 'Ils ne t\'ont pas coupée du sang.', 'Descends. Malkav attend en dessous.'];
+(function(){ const t = document.getElementById('incantation');
+  INCANTATION.forEach((l,i) => { const s = document.createElement('span'); s.textContent = l; s.style.animationDelay = (0.8 + i*1.6) + 's'; t.appendChild(s); });
 })();
 document.getElementById('descendre').onclick = () => { demarrerCoeur(); entrer(); };
 
@@ -490,6 +522,94 @@ function revelation(premiere){
   if (premiere){ try { voix.currentTime = 0; voix.play().catch(()=>{}); } catch(e){} }
   setTimeout(() => { document.getElementById('apres').style.opacity = 1; document.getElementById('reecouter').style.opacity = 1; }, 6000);
 }
+/* ============ Runes flottantes ============ */
+(function(){
+  const ether = document.getElementById('ether');
+  const cles = Object.keys(RUNES);
+  const n = window.innerWidth < 600 ? 12 : 22;
+  const hasard = (a,b) => a + Math.random() * (b - a);
+  for (let i = 0; i < n; i++){
+    const el = document.createElement('div'); el.className = 'rune-vol';
+    el.innerHTML = rune(cles[i % cles.length]);
+    const w = hasard(18, 46);
+    el.style.width = w + 'px';
+    el.style.left = hasard(-2, 96) + '%';
+    el.style.top = hasard(30, 105) + '%';
+    el.style.setProperty('--d', hasard(16, 34).toFixed(1) + 's');
+    el.style.setProperty('--r', (-hasard(0, 30)).toFixed(1) + 's');
+    el.style.setProperty('--dx', hasard(-60, 60).toFixed(0) + 'px');
+    el.style.setProperty('--a0', hasard(-25, 25).toFixed(0) + 'deg');
+    el.style.setProperty('--a1', hasard(-90, 90).toFixed(0) + 'deg');
+    el.style.setProperty('--s', hasard(.7, 1.3).toFixed(2));
+    el.style.setProperty('--o', hasard(.18, .5).toFixed(2));
+    ether.appendChild(el);
+  }
+})();
+
+/* ============ Pensées captées d'autres Malkaviens ============ */
+const PENSEES = [
+  'Il faut racheter des ampoules. Toutes. Elles regardent.',
+  'Encore des pigeons sur Wacker Drive. Ils comptent quelque chose.',
+  'Qui a déplacé ma chaise ? Personne n\'a déplacé ma chaise.',
+  'Il pleuvra mardi. Il pleut toujours mardi.',
+  'Le lait a tourné. Comme le Prince.',
+  'J\'ai rêvé de toi. Je ne dors pas.',
+  'Ne pas oublier : répondre à la lettre de 1874.',
+  'Quelqu\'un fredonne dans les tuyaux. Faux, en plus.',
+  'Les feux rouges durent plus longtemps la nuit. C\'est voulu.',
+  'Compter les lampadaires jusqu\'à Gary. Recommencer.',
+  'Les livres ne se ferment jamais vraiment.',
+  'Ma montre est arrêtée depuis des années. Elle a toujours raison deux fois par jour.',
+  'Le café a un goût de cuivre ce soir.',
+  'Tu es nouvelle ici ? Non. Tu reviens.',
+  'Elle est revenue. Je l\'entends penser.',
+  'Ranger les clés par ordre de taille. Ou de peur.',
+  'Le voisin du dessus marche à l\'envers.',
+  'Si je souris au miroir, qui sourit en premier ?',
+  'Acheter du fil rouge. Beaucoup de fil rouge.',
+  'Trois heures quatorze. Encore. Toujours.',
+  'Le furet a encore volé une chaussette.',
+  'Personne ne lit les notes de bas de page. C\'est là qu\'on cache tout.'
+];
+(function(){
+  const zone = document.getElementById('pensees');
+  const hasard = (a,b) => a + Math.random() * (b - a);
+  let sac = [];
+  function suivante(){
+    if (!sac.length) sac = PENSEES.slice().sort(() => Math.random() - .5);
+    return sac.pop();
+  }
+  // Éléments à ne jamais recouvrir.
+  const OBSTACLES = 'h1,.voix,.chiffre,.porte,.salle,.pave,.cle-vue,.parchemin,.tablette,.saisie,.biblio,.bouton,.incantation,.sceau,.compte,.revelation,.murmure,.son,.furet,.bulle';
+  const chevauche = (a, b) => !(a.right < b.left - 8 || a.left > b.right + 8 || a.bottom < b.top - 8 || a.top > b.bottom + 8);
+  function capter(){
+    const ecran = document.querySelector('.ecran.actif');
+    if (ecran && ecran.id !== 'final' && zone.children.length < 2){
+      const p = document.createElement('div'); p.className = 'pensee'; p.textContent = suivante();
+      p.style.visibility = 'hidden'; zone.appendChild(p);
+      const obstacles = [...document.querySelectorAll(OBSTACLES)]
+        .filter(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed')
+        .map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
+      [...zone.children].forEach(c => { if (c !== p) obstacles.push(c.getBoundingClientRect()); });
+      const W = innerWidth, H = innerHeight, r0 = p.getBoundingClientRect();
+      let place = false;
+      for (let essai = 0; essai < 30 && !place; essai++){
+        const x = hasard(8, Math.max(9, W - r0.width - 8)), y = hasard(8, Math.max(9, H - r0.height - 8));
+        p.style.left = x + 'px'; p.style.top = y + 'px';
+        const r = p.getBoundingClientRect();
+        place = !obstacles.some(o => chevauche(r, o));
+      }
+      if (place){
+        const d = hasard(6.5, 9.5);
+        p.style.setProperty('--d', d.toFixed(1) + 's'); p.style.visibility = '';
+        setTimeout(() => p.remove(), d * 1000 + 200);
+      } else p.remove();
+    }
+    setTimeout(capter, hasard(3500, 8000));
+  }
+  setTimeout(capter, 3500);
+})();
+
 document.getElementById('reecouter').onclick = () => { const v = document.getElementById('voixMalkav'); try { v.currentTime = 0; v.play().catch(()=>{}); } catch(e){} };
 </script>
 </body>
