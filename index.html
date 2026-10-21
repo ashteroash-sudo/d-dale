@@ -48,6 +48,7 @@ h1{font-weight:400;font-size:clamp(1.9rem,6vw,3.2rem);letter-spacing:.06em;color
 @keyframes eclot{to{opacity:1;filter:none}}
 .titre-seuil{font-size:clamp(2.6rem,10vw,4.6rem);letter-spacing:.18em;font-weight:400;color:var(--texte);
   text-shadow:0 0 24px rgba(255,43,60,.55),0 0 2px rgba(255,43,60,.9)}
+.conseil-son{font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;color:var(--pale);opacity:.75;margin-top:-8px}
 .sceau{width:64px;opacity:.85;animation:tourne 40s linear infinite}
 @keyframes tourne{to{transform:rotate(360deg)}}
 
@@ -177,7 +178,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 #intro.part{opacity:0}
 #iPortrait{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center 30%;background-color:#0b0b0b;transform:scale(1)}
 #iFlash{position:absolute;inset:0;z-index:3;background:#050000;opacity:0;overflow:hidden}
-#iFlash .ib{position:absolute;inset:0;background-size:cover;background-position:center;will-change:transform}
+#iFlash .ib{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;will-change:transform}
+#iFond{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) brightness(.45) saturate(1.2);display:none}
+/* Écran plus large que haut (PC) : l'image entière reste visible, un flou de la même image remplit les côtés. */
+@media (min-aspect-ratio:4/5){ #iFlash .ib{background-size:contain} #iFond{display:block} }
 #iPulse{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(120,0,0,.35);mix-blend-mode:multiply;opacity:0}
 #iLignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
   background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
@@ -187,7 +191,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 <body>
 <div id="intro" aria-hidden="true">
   <div id="iPortrait"></div>
-  <div id="iFlash"><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div></div>
+  <div id="iFlash"><div id="iFond"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div></div>
   <div id="iPulse"></div><div id="iLignes"></div><div id="iVignette"></div>
 </div>
 <audio id="iSon" src="assets/son-vision.mp3" preload="auto"></audio>
@@ -203,6 +207,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <path d="M32 3v58M3 32h58M11.5 11.5l41 41M52.5 11.5l-41 41" opacity=".5"/><circle cx="32" cy="32" r="4" fill="#ff2b3c" stroke="none"/></svg>
   <h1 class="titre-seuil">Le Dédale</h1>
   <div class="incantation" id="incantation"></div>
+  <p class="conseil-son">♪ monte le volume, ou mets un casque</p>
   <button class="bouton" id="descendre">Descendre</button>
 </section>
 
@@ -342,7 +347,7 @@ let pauseCoeur = false;
 const lancerVision = (function(){
   const g = id => document.getElementById(id);
   const intro = g('intro'), portrait = g('iPortrait'), flash = g('iFlash'), pulse = g('iPulse'), lignes = g('iLignes'), son = g('iSon');
-  const bandes = [...flash.querySelectorAll('.ib')];
+  const bandes = [...flash.querySelectorAll('.ib')], fondFlou = g('iFond');
   bandes.forEach((b,i) => { const h = 100 / bandes.length; b.style.clipPath = `inset(${i*h}% 0 ${100-(i+1)*h}% 0)`; });
   const dors = ms => new Promise(r => setTimeout(r, ms));
   const charger = url => new Promise(ok => { const i = new Image(); i.onload = () => ok(url); i.onerror = () => ok(null); i.src = url; });
@@ -377,6 +382,7 @@ const lancerVision = (function(){
     try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
     flash.style.transition = 'none'; flash.style.opacity = 1;
     for (const [n, f] of suite.entries()){
+      fondFlou.style.backgroundImage = `url(${f.url})`;
       bandes.forEach(b => {
         b.style.backgroundImage = `url(${f.url})`;
         const fort = f.cle ? Math.random() < .15 : Math.random() < .55;

@@ -12,7 +12,9 @@
   #portrait{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center 30%;
     background-color:#0b0b0b;transform:scale(1)}
   #flash{position:absolute;inset:0;z-index:3;background:#050000;opacity:0;overflow:hidden}
-  .bande{position:absolute;inset:0;background-size:cover;background-position:center;will-change:transform}
+  .bande{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;will-change:transform}
+  #fondFlou{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) brightness(.45) saturate(1.2);display:none}
+  @media (min-aspect-ratio:4/5){ .bande{background-size:contain} #fondFlou{display:block} }
   #pulse{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(120,0,0,.35);mix-blend-mode:multiply;opacity:0}
   #lignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
     background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
@@ -32,7 +34,7 @@
 <body>
 <div id="stage">
   <div id="portrait"></div>
-  <div id="flash"><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div></div>
+  <div id="flash"><div id="fondFlou"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div><div class="bande"></div></div>
   <div id="pulse"></div>
   <div id="lignes"></div>
   <div id="vignette"></div>
@@ -127,6 +129,7 @@ async function jouer(){
   try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
   flash.style.transition = 'none'; flash.style.opacity = 1;
   for (const [n, f] of suite.entries()){
+    $('fondFlou').style.backgroundImage = `url(${f.url})`;
     bandes.forEach(b => {
       b.style.backgroundImage = `url(${f.url})`;
       const fort = f.cle ? Math.random() < .15 : Math.random() < .55;
