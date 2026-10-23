@@ -1,0 +1,2 @@
+Fonds du Dédale II : fond-seuil.jpg, fond-egouts.jpg, fond-terrier.jpg, fond-orgue.jpg, fond-loge.jpg, fond-final.jpg
+Tant qu'ils manquent, la page utilise un fond sombre (ou ceux du Dédale I pour le seuil et la fin).

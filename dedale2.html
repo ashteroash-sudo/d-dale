@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Dédale II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --noir:#070304; --nuit:#12070a; --sang:#4a0610; --rouge:#b3101d; --vif:#ff2b3c;
+  --argent:#c9c9d3; --texte:#ead6d6; --pale:#9c7d80; --papier:#2a1512;
+  --serif:'Cormorant Garamond',Georgia,serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--noir)}
+body{min-height:100vh;background:var(--noir);color:var(--texte);font-family:var(--serif);overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 90px 20px rgba(179,16,29,.35);animation:pouls 1.4s infinite}
+@keyframes pouls{0%,100%{box-shadow:inset 0 0 80px 14px rgba(179,16,29,.28)}12%{box-shadow:inset 0 0 130px 34px rgba(255,43,60,.55)}
+  24%{box-shadow:inset 0 0 95px 20px rgba(179,16,29,.35)}36%{box-shadow:inset 0 0 120px 28px rgba(255,43,60,.45)}}
+body::before{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:49;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .6s steps(3) infinite}
+@keyframes grain{0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-3%)}}
+
+#fond{position:fixed;inset:0;z-index:0;pointer-events:none}
+#fond img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 2.2s ease;filter:brightness(.55) contrast(1.05)}
+#fond img.vu{opacity:1}
+#fond::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(7,3,4,.6),rgba(7,3,4,.2) 35%,rgba(7,3,4,.75))}
+#ether{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.rune-vol{position:absolute;opacity:0;filter:drop-shadow(0 0 6px rgba(255,43,60,.8)) blur(.4px);animation:flotte var(--d) linear var(--r) infinite}
+@keyframes flotte{0%{opacity:0;transform:translate(0,0) rotate(var(--a0)) scale(var(--s))}15%{opacity:var(--o)}50%{opacity:calc(var(--o) * .4)}
+  70%{opacity:var(--o)}100%{opacity:0;transform:translate(var(--dx),-36vh) rotate(var(--a1)) scale(var(--s))}}
+#pensees{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.pensee{position:absolute;max-width:min(70vw,320px);font-style:italic;font-size:clamp(.92rem,3vw,1.08rem);line-height:1.4;color:#d9b3b6;opacity:0;
+  text-shadow:0 0 12px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9);animation:capte var(--d) ease-in-out forwards}
+.pensee::before{content:"∴ ";color:var(--rouge);font-style:normal}
+@keyframes capte{0%{opacity:0;filter:blur(8px);transform:translateY(8px)}18%{opacity:.62;filter:blur(0)}30%{opacity:.5;filter:blur(.6px);transform:translateX(2px)}
+  32%{opacity:.62;filter:blur(0);transform:translateX(0)}78%{opacity:.55}100%{opacity:0;filter:blur(10px);transform:translateY(-10px)}}
+
+.ecran{position:relative;z-index:1;display:none;min-height:100vh;padding:56px 16px 90px;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center}
+.ecran.actif{display:flex;animation:apparition 1.6s ease}
+@keyframes apparition{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:none}}
+.chiffre{font-family:var(--mono);font-size:.75rem;letter-spacing:.35em;color:var(--rouge);text-transform:uppercase}
+h1{font-weight:400;font-size:clamp(1.9rem,6vw,3.2rem);letter-spacing:.06em;text-shadow:0 0 18px rgba(255,43,60,.45)}
+.voix{font-style:italic;font-size:clamp(1.05rem,3.6vw,1.3rem);color:var(--pale);max-width:34rem;line-height:1.55}
+.consigne{font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;color:var(--pale);text-transform:uppercase}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.bouton{font-family:var(--mono);font-size:.85rem;letter-spacing:.3em;text-transform:uppercase;padding:14px 30px;border:1px solid var(--rouge);color:var(--texte);background:rgba(74,6,16,.35);transition:.3s}
+.bouton:hover,.bouton:focus-visible{background:var(--rouge);color:var(--noir);box-shadow:0 0 28px rgba(255,43,60,.6);outline:none}
+.bouton:disabled{opacity:.35;pointer-events:none}
+.saisie{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(94vw,440px)}
+.saisie input{width:100%;font-family:var(--mono);font-size:1.05rem;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;background:#090304;border:1px solid var(--rouge);color:var(--vif);outline:none}
+.saisie input:focus{box-shadow:0 0 22px rgba(255,43,60,.45)}
+.murmure{min-height:3em;font-style:italic;color:var(--pale);max-width:30rem;font-size:1.1rem;transition:opacity .5s}
+.secoue{animation:secoue .5s}
+@keyframes secoue{20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+
+/* Seuil */
+.titre-seuil{font-size:clamp(2.6rem,10vw,4.6rem);letter-spacing:.18em;font-weight:400;text-shadow:0 0 24px rgba(255,43,60,.55),0 0 2px rgba(255,43,60,.9)}
+.sous-titre{font-family:var(--mono);letter-spacing:.5em;color:var(--vif);font-size:.8rem;margin-top:-14px}
+.sceau{width:64px;opacity:.85;animation:tourne 40s linear infinite}
+@keyframes tourne{to{transform:rotate(360deg)}}
+.incantation{font-style:italic;font-size:clamp(1.15rem,4vw,1.45rem);line-height:1.7;max-width:30rem}
+.incantation span{display:block;opacity:0;filter:blur(6px);animation:eclot 2.4s ease forwards}
+@keyframes eclot{to{opacity:1;filter:none}}
+.conseil-son{font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;color:var(--pale);opacity:.75}
+
+/* I — Égouts */
+.bassin{position:relative;width:min(80vw,320px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 50% 55%,#1a0609 0%,#0a0204 60%,#000 100%);border:1px solid rgba(179,16,29,.35);overflow:hidden}
+.bassin .flaque{position:absolute;left:50%;top:62%;width:56%;height:16%;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,43,60,.0),rgba(0,0,0,0));transition:background .12s, box-shadow .12s}
+.bassin .flaque.allume{background:radial-gradient(ellipse,rgba(255,80,90,.95),rgba(179,16,29,.35) 60%,transparent 75%);box-shadow:0 0 60px 18px rgba(255,43,60,.5)}
+.bassin .filet{position:absolute;left:50%;top:0;width:3px;height:62%;transform:translateX(-50%);background:linear-gradient(#ff6b74,#b3101d);opacity:0;transition:opacity .1s;box-shadow:0 0 10px #ff2b3c}
+.bassin .filet.on{opacity:.9}
+.bassin .goutte{position:absolute;left:50%;top:-6%;width:12px;height:18px;margin-left:-6px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;background:#ff4a55;box-shadow:0 0 12px #ff2b3c;opacity:0}
+.bassin .goutte.tombe{animation:tombe .32s ease-in forwards}
+@keyframes tombe{0%{opacity:1;top:-6%}100%{opacity:1;top:58%}}
+.bassin .onde{position:absolute;left:50%;top:62%;width:10%;height:3%;transform:translate(-50%,-50%);border:1px solid rgba(255,90,100,.8);border-radius:50%;opacity:0}
+.bassin .onde.part{animation:onde 1.4s ease-out forwards}
+@keyframes onde{0%{opacity:.9;width:10%;height:3%}100%{opacity:0;width:90%;height:24%}}
+
+/* II — La lettre */
+.lettre{position:relative;width:min(94vw,520px);padding:30px 22px;background:
+  radial-gradient(ellipse at 30% 20%,#3a1d17 0%,#24110e 55%,#170a08 100%);border:1px solid #4a2a20;box-shadow:0 0 50px rgba(0,0,0,.8),inset 0 0 60px rgba(0,0,0,.6);
+  text-align:left;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+.lettre .ligne{font-size:clamp(1.02rem,3.8vw,1.18rem);line-height:1.5;color:#c7ab98;font-style:italic}
+.lettre .cachee{font-size:clamp(.98rem,3.6vw,1.12rem);line-height:1.5;min-height:1.5em;margin:2px 0 8px 14px;font-family:var(--serif)}
+.lettre .cachee span{color:#ff4a4a;opacity:.035;transition:opacity 2.2s ease, text-shadow 2.2s ease}
+.lettre .cachee span.chaud{opacity:1;text-shadow:0 0 8px rgba(255,60,40,.9);transition:opacity .12s, text-shadow .12s}
+.lettre .halo{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,120,60,.18),transparent 70%);opacity:0;transition:opacity .4s}
+
+/* III — L'orgue */
+.orgue{display:flex;align-items:flex-end;justify-content:center;gap:10px;height:230px;padding:0 10px 14px;width:min(94vw,440px);
+  border-bottom:6px solid #2a0b0f;background:linear-gradient(to top,rgba(42,11,15,.6),transparent)}
+.tuyau{flex:1;max-width:58px;border:1px solid rgba(201,201,211,.5);border-radius:28px 28px 4px 4px;
+  background:linear-gradient(90deg,#3d3d45,#b8b8c2 45%,#55555e);transition:filter .12s, box-shadow .12s;position:relative}
+.tuyau::after{content:"";position:absolute;left:30%;right:30%;top:22%;height:8px;border-radius:50%;background:#111;opacity:.8}
+.tuyau.chante{filter:brightness(1.6) sepia(1) hue-rotate(-40deg) saturate(5);box-shadow:0 0 30px 8px rgba(255,43,60,.7)}
+.tuyau.faux{filter:brightness(.6) sepia(1) hue-rotate(-50deg) saturate(8)}
+.tuyau:nth-child(1){height:58%}.tuyau:nth-child(2){height:72%}.tuyau:nth-child(3){height:100%}.tuyau:nth-child(4){height:80%}.tuyau:nth-child(5){height:64%}
+.manche{display:flex;gap:8px}
+.manche i{width:12px;height:12px;border-radius:50%;border:1px solid var(--rouge)}
+.manche i.ok{background:var(--vif);box-shadow:0 0 10px var(--vif)}
+.rimes{font-size:clamp(1.4rem,5.4vw,2.1rem);line-height:1.5;color:var(--vif);text-shadow:0 0 20px rgba(255,43,60,.6);font-style:italic;min-height:3em}
+.rimes span{opacity:0;animation:lettreApp .7s forwards}
+@keyframes lettreApp{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:none}}
+.boucle{font-style:italic;font-size:clamp(1.05rem,3.8vw,1.25rem);color:var(--texte);min-height:3.2em;max-width:30rem;line-height:1.5}
+.boucle::after{content:"▍";color:var(--vif);animation:clign 1s steps(2) infinite;margin-left:2px}
+@keyframes clign{50%{opacity:0}}
+
+/* IV — La loge */
+.coffrets{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.coffret{width:min(42vw,190px);aspect-ratio:3/4;border:1px solid #5a3a20;background:linear-gradient(160deg,#1c1210,#0c0706);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.8);transition:.35s;font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:#b48a5a}
+.coffret svg{width:72%}
+.coffret:hover,.coffret:focus-visible{border-color:#d9a25a;box-shadow:0 0 30px rgba(217,162,90,.35),inset 0 0 30px rgba(0,0,0,.8);outline:none}
+#eau{position:fixed;left:0;right:0;bottom:0;height:0;z-index:60;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(60,4,10,.85),rgba(10,0,2,.98));transition:height 5s cubic-bezier(.3,0,.2,1);box-shadow:0 -10px 40px rgba(255,43,60,.25)}
+#eau::before{content:"";position:absolute;left:-50%;right:-50%;top:-14px;height:28px;border-radius:50%;background:rgba(120,10,20,.6);animation:vague 3s ease-in-out infinite}
+@keyframes vague{50%{transform:translateX(6%) scaleY(1.3)}}
+#eau.monte{height:100vh}
+.eclair{position:fixed;inset:0;z-index:61;pointer-events:none;background:#fff;opacity:0}
+.eclair.boum{animation:boum 2.4s ease forwards}
+@keyframes boum{0%{opacity:1;background:#fff}15%{opacity:1;background:#ff6a20}50%{opacity:.85;background:#b3101d}100%{opacity:0;background:#000}}
+.tremble{animation:tremble .6s steps(6) 3}
+@keyframes tremble{0%{transform:translate(0)}20%{transform:translate(-12px,6px)}40%{transform:translate(10px,-8px)}60%{transform:translate(-8px,-4px)}80%{transform:translate(6px,8px)}100%{transform:translate(0)}}
+.compte{font-family:var(--mono);font-size:clamp(2rem,9vw,3.4rem);color:var(--vif);letter-spacing:.12em;text-shadow:0 0 20px rgba(255,43,60,.6)}
+.revelation{font-size:clamp(1.9rem,7.5vw,3.8rem);letter-spacing:.12em;color:var(--vif);text-shadow:0 0 30px rgba(255,43,60,.8);min-height:1.3em}
+.revelation span{opacity:0;animation:lettreApp .9s forwards}
+
+/* Furet */
+.furet{position:fixed;right:14px;bottom:14px;z-index:40;width:74px;opacity:0;pointer-events:none;transition:opacity 2s}
+.furet.la{opacity:.9;pointer-events:auto;animation:renifle 4s ease-in-out infinite}
+@keyframes renifle{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.bulle{position:fixed;right:14px;bottom:100px;z-index:41;max-width:min(80vw,300px);padding:14px 16px;background:#14070a;border:1px solid var(--rouge);font-style:italic;font-size:1.05rem;line-height:1.45;display:none;text-align:left}
+.bulle.on{display:block;animation:apparition .8s ease}
+.bulle p+p{margin-top:10px;padding-top:10px;border-top:1px solid rgba(179,16,29,.25)}
+
+/* Vision d'introduction */
+#intro{position:fixed;inset:0;z-index:80;background:#000;display:none;overflow:hidden;transition:opacity 1.2s ease}
+#intro.on{display:block}#intro.part{opacity:0}
+#iPortrait{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center 30%;background-color:#0b0b0b}
+#iFlash{position:absolute;inset:0;z-index:3;background:#050000;opacity:0;overflow:hidden}
+#iFlash .ib{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;will-change:transform}
+#iFond{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) brightness(.45) saturate(1.2);display:none}
+@media (min-aspect-ratio:4/5){ #iFlash .ib{background-size:contain} #iFond{display:block} }
+#iPulse{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(120,0,0,.35);mix-blend-mode:multiply;opacity:0}
+#iLignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
+#iVignette{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.85)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important}}
+</style>
+</head>
+<body>
+<div id="intro" aria-hidden="true">
+  <div id="iPortrait"></div>
+  <div id="iFlash"><div id="iFond"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div><div class="ib"></div></div>
+  <div id="iPulse"></div><div id="iLignes"></div><div id="iVignette"></div>
+</div>
+<audio id="iSon" src="assets/son-vision.mp3" preload="auto"></audio>
+<audio id="voix1" src="assets/voix-kris-1.mp3" preload="auto"></audio>
+<audio id="voix2" src="assets/voix-kris-2.mp3" preload="auto"></audio>
+<div id="eau"></div><div class="eclair" id="eclair"></div>
+<div id="fond"></div><div id="ether"></div><div id="pensees"></div>
+
+<!-- Pas encore appelée -->
+<section class="ecran" id="silence">
+  <p class="chiffre">silence</p>
+  <h1>La Toile ne t'a pas encore appelée</h1>
+  <p class="voix">Retourne écouter là où elle t'a gardée.</p>
+  <a class="bouton" href="index.html" style="text-decoration:none">Revenir</a>
+</section>
+
+<!-- SEUIL -->
+<section class="ecran" id="seuil">
+  <svg class="sceau" viewBox="0 0 64 64" fill="none" stroke="#b3101d" stroke-width="1.2" aria-hidden="true">
+    <circle cx="32" cy="32" r="29"/><circle cx="32" cy="32" r="21" stroke-dasharray="2 4"/>
+    <path d="M32 3v58M3 32h58M11.5 11.5l41 41M52.5 11.5l-41 41" opacity=".5"/><circle cx="32" cy="32" r="4" fill="#ff2b3c" stroke="none"/></svg>
+  <h1 class="titre-seuil">Le Dédale</h1>
+  <p class="sous-titre">II · la voix</p>
+  <div class="incantation" id="incantation"></div>
+  <p class="conseil-son">♪ monte le volume, ou mets un casque</p>
+  <button class="bouton" id="descendre">Descendre</button>
+</section>
+
+<!-- I — Les égouts -->
+<section class="ecran" id="ch1">
+  <p class="chiffre">Chambre I</p>
+  <h1>Les Égouts</h1>
+  <p class="voix">Ici, l'eau parle. Elle ne dit qu'une chose, encore et encore.<br>Les gouttes sont courtes, les filets sont longs.</p>
+  <div class="bassin" id="bassin"><div class="filet" id="filet"></div><div class="goutte" id="goutte"></div><div class="flaque" id="flaque"></div></div>
+  <button class="bouton" id="ecouterEau">Écouter l'eau</button>
+  <div class="saisie">
+    <input id="rep1" autocomplete="off" spellcheck="false" placeholder="ce que dit l'eau" aria-label="Ce que dit l'eau">
+    <button class="bouton" id="val1">Répondre</button>
+    <p class="murmure" id="mur1"></p>
+  </div>
+</section>
+
+<!-- II — La lettre -->
+<section class="ecran" id="ch2">
+  <p class="chiffre">Chambre II</p>
+  <h1>Le Terrier</h1>
+  <p class="voix">Une lettre oubliée. L'encre ordinaire ne dit rien.<br>L'autre encre attend la chaleur.</p>
+  <p class="consigne">glisse le doigt sur la lettre</p>
+  <div class="lettre" id="lettre"><div class="halo" id="halo"></div></div>
+  <div class="saisie">
+    <input id="rep2" autocomplete="off" spellcheck="false" placeholder="qui chantera ce soir ?" aria-label="Qui chantera ce soir ?">
+    <button class="bouton" id="val2">Répondre</button>
+    <p class="murmure" id="mur2"></p>
+  </div>
+</section>
+
+<!-- III — L'orgue, puis la Voix, puis le livre -->
+<section class="ecran" id="ch3">
+  <p class="chiffre">Chambre III</p>
+  <h1 id="titre3">L'Orgue</h1>
+  <div id="phaseOrgue" style="display:contents">
+    <p class="voix">Au bord d'un lac noir, quelqu'un joue.<br>Rejoue ce que tu entends. Les tuyaux s'allument quand ils chantent.</p>
+    <div class="manche" id="manche"><i></i><i></i><i></i></div>
+    <div class="orgue" id="orgue"></div>
+    <button class="bouton" id="ecouterOrgue">Écouter</button>
+    <p class="murmure" id="mur3"></p>
+  </div>
+  <div id="phaseVoix" style="display:none;flex-direction:column;align-items:center;gap:26px">
+    <div class="rimes" id="rimes"></div>
+    <button class="bouton" id="reentendre" style="opacity:0;transition:opacity 2s">Réentendre la Voix</button>
+    <div id="champLivre" style="display:none;flex-direction:column;align-items:center;gap:18px">
+      <p class="boucle" id="boucle"></p>
+      <div class="saisie">
+        <input id="rep3" autocomplete="off" spellcheck="false" placeholder="le titre du livre" aria-label="Le titre du livre">
+        <button class="bouton" id="val3">Nommer</button>
+        <p class="murmure" id="mur3b"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IV — La loge n° 5 -->
+<section class="ecran" id="ch4">
+  <p class="chiffre">Chambre IV</p>
+  <h1>La Loge n° 5</h1>
+  <p class="voix">Deux coffrets d'ébène sur la cheminée.<br>Un seul se retourne. L'autre fait tout sauter.</p>
+  <div class="coffrets">
+    <button class="coffret" id="cScorpion" aria-label="Le scorpion"></button>
+    <button class="coffret" id="cSauterelle" aria-label="La sauterelle"></button>
+  </div>
+</section>
+
+<!-- Verrou -->
+<section class="ecran" id="verrou">
+  <p class="chiffre">la loge s'est effondrée</p>
+  <h1>Tout a sauté</h1>
+  <p class="voix">La loge se reconstruira. Elle se reconstruit toujours.</p>
+  <div class="compte" id="compte">--:--:--</div>
+</section>
+
+<!-- Final -->
+<section class="ecran" id="final">
+  <p class="chiffre">la toile · rétablie</p>
+  <div class="revelation" id="revelation"></div>
+  <p class="voix" id="apres" style="opacity:0;transition:opacity 3s">Malkav t'accepte en son sein.</p>
+  <button class="bouton" id="reecouter" style="opacity:0;transition:opacity 3s">Réécouter</button>
+</section>
+
+<button class="furet" id="furet" aria-label="Un furet"></button>
+<div class="bulle" id="bulle"></div>
+
+<script>
+function sha256(ascii){function r(v,a){return(v>>>a)|(v<<(32-a))}var P=Math.pow,M=P(2,32),i,j,res='',w=[],L=ascii.length*8,
+h=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,c={};for(var n=2;pc<64;n++){if(!c[n]){for(i=0;i<313;i+=n)c[i]=n;
+h[pc]=(P(n,.5)*M)|0;k[pc++]=(P(n,1/3)*M)|0}}ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';for(i=0;i<ascii.length;i++){
+j=ascii.charCodeAt(i);if(j>>8)return;w[i>>2]|=j<<((3-i)%4)*8}w[w.length]=((L/M)|0);w[w.length]=L;for(j=0;j<w.length;){
+var W=w.slice(j,j+=16),o=h;h=h.slice(0,8);for(i=0;i<64;i++){var a=W[i-15],b=W[i-2],A=h[0],E=h[4],
+t1=h[7]+(r(E,6)^r(E,11)^r(E,25))+((E&h[5])^((~E)&h[6]))+k[i]+(W[i]=(i<16)?W[i]:(W[i-16]+(r(a,7)^r(a,18)^(a>>>3))+W[i-7]+(r(b,17)^r(b,19)^(b>>>10)))|0),
+t2=(r(A,2)^r(A,13)^r(A,22))+((A&h[1])^(A&h[2])^(h[1]&h[2]));h=[(t1+t2)|0].concat(h);h[4]=(h[4]+t1)|0}
+for(i=0;i<8;i++)h[i]=(h[i]+o[i])|0}for(i=0;i<8;i++)for(j=3;j+1;j--){var x=(h[i]>>(j*8))&255;res+=((x<16)?0:'')+x.toString(16)}return res}
+const empreinte = s => sha256('toile::' + s);
+const CLEFS = {
+  appel:   '3de403137ee279b8b6a8e0b452ecd11a4c092b2fbb06b9bc017e9dc17071364e',
+  eau:     'cc6e61f0de037bdd425ece34da4d547abd66d6970d875be56c46e5c64afbae1c',
+  lettre:  '7db74aa6ae25e8c58279c7abd4b2d45976c4d8c7248f9291d6f1cedfe0e22581',
+  leurre:  '355f7474cf7bf196dcceec733d25aa709cca3ff2ec6a7a08e5bb8504629ca41a',
+  livres: ['23f7d1539863b2a538d912c65484e524c5954f492db315622a2fd0191a38045f','42c1564f16adec33c93c12d0f5ee572ce461812b89946d575b602d74b4bd3b18',
+           '51c20dea23651a20d1e82281c0596054c29b2c7384d6a5edfb60026b6ec9bc7a','f7b27a0533593bb33b30ec38df83959eec108b4822bededa8cefb20c798fd657'],
+  coffret: '0d446fe9dbe4f2d4a1df2e31a01c07a03e22d6e735264a9b33a7fecc3712be4e'
+};
+/* ============ RÉGLAGES ============ */
+const VERROU_HEURES = 6;              // durée de fermeture si elle tourne la sauterelle
+const INDICES_LIVRE_MIN = [20, 45, 75]; // minutes avant chaque indice du furet (champ du livre)
+const VISION = {
+  objets: ['images/vision2/objet-1.jpg','images/vision2/objet-2.jpg','images/vision2/objet-3.jpg','images/vision2/objet-4.jpg'],
+  parasites: ['images/vision/parasite-1.jpg','images/vision/parasite-2.jpg','images/vision/parasite-3.jpg'],
+  avant: 'images/portrait-avant.jpg', apres: 'images/portrait-apres.jpg', passages: 2, zoom: 2.6
+};
+const FONDS = {
+  silence:['images/fond-verrou.jpg'], seuil:['images/d2/fond-seuil.jpg','images/fond-seuil.jpg'],
+  ch1:['images/d2/fond-egouts.jpg'], ch2:['images/d2/fond-terrier.jpg'], ch3:['images/d2/fond-orgue.jpg'],
+  ch4:['images/d2/fond-loge.jpg'], verrou:['images/fond-verrou.jpg'], final:['images/d2/fond-final.jpg','images/fond-final.jpg']
+};
+
+/* ============ Mémoire ============ */
+const CLE = 'toile.dedale2.v1';
+const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) || {}; } catch(e){ return {}; } };
+const ecrire = () => { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch(e){} };
+let etat = lire(); if (!etat.salle) etat.salle = 1;
+const appelee = (() => { try { return localStorage.getItem('toile.appel') === CLEFS.appel; } catch(e){ return false; } })();
+const g = id => document.getElementById(id);
+const dors = ms => new Promise(r => setTimeout(r, ms));
+const hasard = (a,b) => a + Math.random() * (b - a);
+const norme = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
+function murmurer(id, txt){ const m = g(id); m.style.opacity = 0; setTimeout(() => { m.textContent = txt; m.style.opacity = 1; }, 250); }
+function secouer(el){ el.classList.remove('secoue'); void el.offsetWidth; el.classList.add('secoue'); }
+
+/* ============ Fonds ============ */
+function changerFond(id){
+  const c = g('fond'), liste = (FONDS[id] || []).slice();
+  c.querySelectorAll('img').forEach(i => { i.classList.remove('vu'); setTimeout(() => i.remove(), 2300); });
+  const essayer = () => { const url = liste.shift(); if (!url) return; const img = new Image(); img.alt = '';
+    img.onload = () => { c.appendChild(img); requestAnimationFrame(() => requestAnimationFrame(() => img.classList.add('vu'))); };
+    img.onerror = essayer; img.src = url; };
+  essayer();
+}
+function montrer(id){
+  document.querySelectorAll('.ecran').forEach(s => s.classList.remove('actif'));
+  g(id).classList.add('actif'); window.scrollTo(0,0); changerFond(id); majFuret();
+}
+
+/* ============ Audio synthétisé ============ */
+let ctx = null;
+function audio(){ try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch(e){} return ctx; }
+function plic(long){ const a = audio(); if (!a) return; const t = a.currentTime, o = a.createOscillator(), v = a.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(long ? 520 : 1250, t); o.frequency.exponentialRampToValueAtTime(long ? 300 : 700, t + (long ? .8 : .12));
+  v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(long ? .18 : .35, t + .01); v.gain.exponentialRampToValueAtTime(.001, t + (long ? .85 : .2));
+  o.connect(v).connect(a.destination); o.start(t); o.stop(t + (long ? .9 : .25));
+  if (long){ const n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * .8, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * .25 * (1 - i/d.length);
+    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; n.buffer = b; n.connect(f).connect(a.destination); n.start(t); }
+}
+const NOTES = [293.66, 349.23, 392.00, 440.00, 523.25];
+function note(i, duree = .55){ const a = audio(); if (!a) return; const t = a.currentTime, v = a.createGain(); v.connect(a.destination);
+  v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(.16, t + .04); v.gain.setValueAtTime(.16, t + duree - .1); v.gain.linearRampToValueAtTime(0, t + duree + .25);
+  [[1,1],[2,.5],[3,.25],[4,.12]].forEach(([h,amp]) => { const o = a.createOscillator(), gg = a.createGain(); o.type = h === 1 ? 'triangle' : 'sine';
+    o.frequency.value = NOTES[i] * h; gg.gain.value = amp; o.connect(gg).connect(v); o.start(t); o.stop(t + duree + .3); });
+}
+
+/* ============ Seuil ============ */
+['Tu es revenue.', 'Quelqu\'un t\'a entendue revenir.', 'Descends plus bas que la dernière fois.'].forEach((l,i) => {
+  const s = document.createElement('span'); s.textContent = l; s.style.animationDelay = (0.8 + i*1.6) + 's'; g('incantation').appendChild(s); });
+
+/* ============ Vision d'introduction ============ */
+const lancerVision = (function(){
+  const intro = g('intro'), portrait = g('iPortrait'), flash = g('iFlash'), pulse = g('iPulse'), lignes = g('iLignes'), son = g('iSon'), fondFlou = g('iFond');
+  const bandes = [...flash.querySelectorAll('.ib')];
+  bandes.forEach((b,i) => { const h = 100 / bandes.length; b.style.clipPath = `inset(${i*h}% 0 ${100-(i+1)*h}% 0)`; });
+  const charger = url => new Promise(ok => { const i = new Image(); i.onload = () => ok(url); i.onerror = () => ok(null); i.src = url; });
+  let objets = [], parasites = [];
+  const pret = Promise.all([Promise.all(VISION.objets.map(charger)), Promise.all(VISION.parasites.map(charger)), charger(VISION.avant), charger(VISION.apres)])
+    .then(([o,p]) => { objets = o.filter(Boolean); parasites = p.filter(Boolean); });
+  const duree = () => new Promise(ok => {
+    if (son.readyState >= 1 && son.duration > 0) return ok(son.duration * 1000);
+    son.addEventListener('loadedmetadata', () => ok((son.duration || 6) * 1000), { once: true });
+    son.addEventListener('error', () => ok(6000), { once: true }); setTimeout(() => ok(6000), 2500); });
+  return async function(){
+    try { son.muted = true; const pr = son.play(); if (pr) pr.then(() => { son.pause(); son.currentTime = 0; son.muted = false; }).catch(() => { son.muted = false; }); } catch(e){}
+    await Promise.race([pret, dors(4000)]);
+    if (!objets.length) return; // pas encore d'images : on passe directement
+    intro.classList.remove('part'); intro.classList.add('on');
+    portrait.style.transition = 'none'; portrait.style.transform = 'scale(1)'; portrait.style.backgroundImage = `url(${VISION.avant})`;
+    await dors(500);
+    portrait.style.transition = 'transform 700ms cubic-bezier(.7,0,.9,.4)';
+    requestAnimationFrame(() => portrait.style.transform = `scale(${VISION.zoom})`);
+    await dors(700);
+    const suite = [];
+    for (let k = 0; k < VISION.passages; k++) objets.forEach((url, i) => {
+      if (parasites.length) suite.push({ url: parasites[(i + k) % parasites.length], cle: false }); suite.push({ url, cle: true }); });
+    if (parasites.length) suite.push({ url: parasites[0], cle: false });
+    const unite = (await duree()) / (suite.reduce((n, f) => n + (f.cle ? 3 : 1), 0) || 1);
+    try { son.muted = false; son.currentTime = 0; son.play().catch(() => {}); } catch(e){}
+    try { navigator.vibrate && navigator.vibrate([60, 90, 140, 60, 220]); } catch(e){}
+    flash.style.transition = 'none'; flash.style.opacity = 1;
+    for (const [n, f] of suite.entries()){
+      fondFlou.style.backgroundImage = `url(${f.url})`;
+      bandes.forEach(b => { b.style.backgroundImage = `url(${f.url})`;
+        const fort = f.cle ? Math.random() < .15 : Math.random() < .55;
+        b.style.transform = `translateX(${fort ? (Math.random() - .5) * (f.cle ? 30 : 90) : (Math.random() - .5) * (f.cle ? 4 : 12)}px)`; });
+      flash.style.transform = `translate(${(Math.random()-.5)*(f.cle?6:14)}px,${(Math.random()-.5)*(f.cle?4:8)}px)`;
+      flash.style.filter = f.cle ? 'contrast(1.1) saturate(1.05)' : `contrast(${1.2+Math.random()*.4}) saturate(${1.3+Math.random()*.5}) hue-rotate(${(Math.random()-.5)*14}deg)`;
+      lignes.style.opacity = f.cle ? .1 : .2 + Math.random() * .3; pulse.style.opacity = f.cle ? .25 : (n % 2 ? .6 : .3);
+      portrait.style.transform = `scale(${VISION.zoom}) translate(${(Math.random()-.5)*14}px,${(Math.random()-.5)*14}px)`;
+      if (f.cle){ await dors(unite * 1.5); bandes.forEach(b => b.style.transform = `translateX(${(Math.random()-.5)*16}px)`); await dors(unite * 1.5); }
+      else await dors(unite);
+    }
+    flash.style.opacity = 0; flash.style.transform = 'none'; flash.style.filter = 'none'; lignes.style.opacity = 0; pulse.style.opacity = 0;
+    portrait.style.backgroundImage = `url(${VISION.apres})`;
+    portrait.style.transition = 'transform 900ms cubic-bezier(.16,1,.3,1)'; portrait.style.transform = 'scale(1)';
+    await dors(2400); intro.classList.add('part'); await dors(1200); intro.classList.remove('on', 'part');
+  };
+})();
+
+function entrer(){
+  if (etat.verrou && Date.now() < etat.verrou) return lancerVerrou();
+  if (etat.salle === 1) return montrer('ch1');
+  if (etat.salle === 2) return montrer('ch2');
+  if (etat.salle === 3) return entrerCh3();
+  if (etat.salle === 4) return montrer('ch4');
+  return final(false);
+}
+let enDescente = false;
+g('descendre').onclick = async () => {
+  if (enDescente) return; enDescente = true; audio();
+  // Les voix se déverrouillent dans le geste, pour pouvoir parler plus tard.
+  ['voix1','voix2'].forEach(id => { const v = g(id); try { v.muted = true; const p = v.play(); if (p) p.then(() => { v.pause(); v.currentTime = 0; v.muted = false; }).catch(() => { v.muted = false; }); } catch(e){} });
+  await lancerVision(); entrer(); enDescente = false;
+};
+
+/* ============ I — Le morse de l'eau ============ */
+const MORSE = { A:'.-', E:'.', G:'--.', I:'..', N:'-.', R:'.-.' };
+const MESSAGE_EAU = ['G','A','R','N','I','E','R']; // jamais affiché : il est seulement « joué »
+let eauEnCours = false, eauJeton = 0;
+async function jouerEau(){
+  const jeton = ++eauJeton; eauEnCours = true; g('ecouterEau').textContent = 'L\'eau parle…'; g('ecouterEau').disabled = true;
+  const flaque = g('flaque'), filet = g('filet'), goutte = g('goutte'), bassin = g('bassin');
+  const onde = () => { const o = document.createElement('div'); o.className = 'onde'; bassin.appendChild(o); requestAnimationFrame(() => o.classList.add('part')); setTimeout(() => o.remove(), 1500); };
+  for (let tour = 0; tour < 3 && jeton === eauJeton && g('ch1').classList.contains('actif'); tour++){
+    for (const lettre of MESSAGE_EAU){
+      for (const signe of MORSE[lettre]){
+        if (jeton !== eauJeton) return;
+        if (signe === '.'){
+          goutte.classList.remove('tombe'); void goutte.offsetWidth; goutte.classList.add('tombe');
+          await dors(320); goutte.classList.remove('tombe'); plic(false); flaque.classList.add('allume'); onde(); await dors(300); flaque.classList.remove('allume');
+        } else {
+          filet.classList.add('on'); plic(true); flaque.classList.add('allume'); onde(); await dors(1000); filet.classList.remove('on'); flaque.classList.remove('allume');
+        }
+        await dors(450);
+      }
+      await dors(1300);
+    }
+    await dors(3500);
+  }
+  eauEnCours = false; g('ecouterEau').textContent = 'Écouter encore'; g('ecouterEau').disabled = false;
+}
+g('ecouterEau').onclick = () => { audio(); jouerEau(); };
+function valider1(){
+  const v = norme(g('rep1').value); if (!v) return;
+  if (empreinte(v) === CLEFS.eau){ eauJeton++; etat.salle = 2; ecrire(); murmurer('mur1', 'L\'eau se tait. Elle a été entendue.'); setTimeout(() => montrer('ch2'), 1800); }
+  else { secouer(g('rep1')); murmurer('mur1', 'L\'eau ne dit pas ça. Écoute encore.'); }
+}
+g('val1').onclick = valider1; g('rep1').addEventListener('keydown', e => { if (e.key === 'Enter') valider1(); });
+
+/* ============ II — La lettre à l'encre invisible ============ */
+const LETTRE = [
+  ['Monsieur le régisseur,', 'Messieurs,'],
+  ['Je vous écris au sujet de l\'humidité des sous-sols.', 'la loge numéro cinq doit rester libre.'],
+  ['Les tuyaux gémissent depuis trois nuits.', 'Ce soir, ce n\'est pas la Carlotta qui chantera.'],
+  ['Les machinistes refusent de descendre plus bas.', 'Ce sera Christine.'],
+  ['Je vous prie de faire venir un plombier.', 'Sinon, un malheur arrivera dans la salle.'],
+  ['Votre dévoué, le concierge.', 'F. de l\'O.']
+];
+(function(){
+  const l = g('lettre');
+  LETTRE.forEach(([vis, cach]) => {
+    const a = document.createElement('p'); a.className = 'ligne'; a.textContent = vis; l.appendChild(a);
+    const b = document.createElement('p'); b.className = 'cachee';
+    b.innerHTML = cach.split(' ').map(m => `<span>${m}</span>`).join(' '); l.appendChild(b);
+  });
+  const halo = g('halo'), mots = () => [...l.querySelectorAll('.cachee span')];
+  const minuteurs = new Map();
+  function chauffer(x, y){
+    const r0 = l.getBoundingClientRect();
+    halo.style.left = (x - r0.left) + 'px'; halo.style.top = (y - r0.top) + 'px'; halo.style.opacity = 1;
+    mots().forEach(m => {
+      const r = m.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
+      if (Math.hypot(cx - x, (cy - y) * 1.4) < 70){
+        m.classList.add('chaud'); clearTimeout(minuteurs.get(m));
+        minuteurs.set(m, setTimeout(() => m.classList.remove('chaud'), 1800));
+      }
+    });
+  }
+  l.addEventListener('pointermove', e => chauffer(e.clientX, e.clientY));
+  l.addEventListener('pointerdown', e => chauffer(e.clientX, e.clientY));
+  l.addEventListener('pointerleave', () => halo.style.opacity = 0);
+  l.addEventListener('touchmove', e => { e.preventDefault(); const t = e.touches[0]; chauffer(t.clientX, t.clientY); }, { passive:false });
+  l.addEventListener('touchend', () => halo.style.opacity = 0);
+})();
+function valider2(){
+  const v = norme(g('rep2').value); if (!v) return;
+  const e = empreinte(v);
+  if (e === CLEFS.lettre){ etat.salle = 3; ecrire(); murmurer('mur2', 'L\'encre refroidit. Quelque part, quelqu\'un accorde un instrument.'); setTimeout(entrerCh3, 1900); }
+  else if (e === CLEFS.leurre){ secouer(g('rep2')); murmurer('mur2', 'Non. Celle-là, on l\'a fait taire.'); }
+  else { secouer(g('rep2')); murmurer('mur2', 'La lettre garde son secret.'); }
+}
+g('val2').onclick = valider2; g('rep2').addEventListener('keydown', e => { if (e.key === 'Enter') valider2(); });
+
+/* ============ III — L'orgue ============ */
+const MANCHES = [4, 5, 6];
+let manche = 0, suite = [], attendu = 0, orgueJoue = false;
+(function(){ const o = g('orgue'); for (let i = 0; i < 5; i++){ const t = document.createElement('button'); t.className = 'tuyau'; t.setAttribute('aria-label', 'tuyau ' + (i+1));
+  t.onclick = () => toucher(i); o.appendChild(t); } })();
+const tuyaux = () => [...g('orgue').children];
+function nouvelleManche(){ suite = Array.from({length: MANCHES[manche]}, () => Math.floor(Math.random() * 5)); }
+async function jouerSuite(){
+  orgueJoue = true; attendu = 0; g('ecouterOrgue').disabled = true;
+  for (const i of suite){ const t = tuyaux()[i]; t.classList.add('chante'); note(i); await dors(560); t.classList.remove('chante'); await dors(220); }
+  orgueJoue = false; g('ecouterOrgue').disabled = false; g('ecouterOrgue').textContent = 'Réécouter';
+  murmurer('mur3', 'À toi.');
+}
+async function toucher(i){
+  if (orgueJoue || !suite.length) return; audio();
+  const t = tuyaux()[i]; t.classList.add('chante'); note(i, .35); setTimeout(() => t.classList.remove('chante'), 380);
+  if (i !== suite[attendu]){
+    tuyaux().forEach(x => x.classList.add('faux')); setTimeout(() => tuyaux().forEach(x => x.classList.remove('faux')), 600);
+    murmurer('mur3', 'Fausse note. La Voix recommence.'); attendu = 0; await dors(1500); return jouerSuite();
+  }
+  attendu++;
+  if (attendu === suite.length){
+    g('manche').children[manche].classList.add('ok'); manche++;
+    if (manche < MANCHES.length){ murmurer('mur3', 'Juste. Elle continue, plus longtemps.'); nouvelleManche(); await dors(1600); jouerSuite(); }
+    else { murmurer('mur3', 'L\'orgue se tait. Quelqu\'un a écouté.'); etat.voix = true; ecrire(); await dors(1800); laVoix(true); }
+  }
+}
+g('ecouterOrgue').onclick = () => { audio(); if (!suite.length) nouvelleManche(); jouerSuite(); };
+
+const RIMES = ['À la soirée qui bat son plein,', 'prends le livre de mes mains.'];
+async function laVoix(premiere){
+  g('phaseOrgue').style.display = 'none'; g('titre3').textContent = 'La Voix';
+  const pv = g('phaseVoix'); pv.style.display = 'flex';
+  const r = g('rimes'); r.innerHTML = '';
+  let d = .6;
+  RIMES.forEach((ligne, k) => { if (k) r.appendChild(document.createElement('br'));
+    [...ligne].forEach(c => { const s = document.createElement('span'); s.textContent = c === ' ' ? ' ' : c; s.style.animationDelay = d + 's'; d += .07; r.appendChild(s); }); });
+  if (premiere){ const v = g('voix1'); try { v.muted = false; v.currentTime = 0; v.play().catch(() => {}); } catch(e){} }
+  setTimeout(() => g('reentendre').style.opacity = 1, (d + 1) * 1000);
+  setTimeout(montrerChampLivre, premiere ? (d + 2.5) * 1000 : 400);
+}
+g('reentendre').onclick = () => { const v = g('voix1'); try { v.muted = false; v.currentTime = 0; v.play().catch(() => {}); } catch(e){} };
+
+const PHRASE_PATIENCE = 'La patience est une vertu, petit chou-fleur. Trouve le bon livre et tu connaîtras le bonheur.';
+let boucleLancee = false;
+function montrerChampLivre(){
+  g('champLivre').style.display = 'flex';
+  if (!etat.debutLivre){ etat.debutLivre = Date.now(); ecrire(); }
+  majFuret();
+  if (boucleLancee) return; boucleLancee = true;
+  (async function boucle(){
+    const el = g('boucle');
+    while (true){
+      for (let i = 1; i <= PHRASE_PATIENCE.length; i++){ el.textContent = PHRASE_PATIENCE.slice(0, i); await dors(55); }
+      await dors(2800);
+      for (let i = PHRASE_PATIENCE.length; i >= 0; i--){ el.textContent = PHRASE_PATIENCE.slice(0, i); await dors(22); }
+      await dors(1000);
+    }
+  })();
+}
+const MAUVAIS_LIVRES = ['Ce livre-là ne tremble pas entre mes mains.', 'Tu l\'as peut-être lu. Ce n\'est pas celui-là.',
+  'Plus bas. Sous la scène. Sous le lac.', 'La patience, petit chou-fleur.', 'Non. Mais tu t\'approches peut-être. Ou pas.'];
+let mauvais = 0;
+function valider3(){
+  let v = norme(g('rep3').value); if (!v) return;
+  if (v.startsWith('LE')) v = v.slice(2); else if (v.startsWith('THE')) v = v.slice(3);
+  if (CLEFS.livres.includes(empreinte(v))){
+    etat.salle = 4; ecrire(); murmurer('mur3b', 'Le livre s\'ouvre tout seul, à la page d\'une loge.'); setTimeout(() => montrer('ch4'), 2200);
+  } else { secouer(g('rep3')); murmurer('mur3b', MAUVAIS_LIVRES[mauvais++ % MAUVAIS_LIVRES.length]); }
+}
+g('val3').onclick = valider3; g('rep3').addEventListener('keydown', e => { if (e.key === 'Enter') valider3(); });
+function entrerCh3(){
+  montrer('ch3');
+  if (etat.voix) laVoix(false);
+}
+
+/* ============ IV — Le scorpion ou la sauterelle ============ */
+g('cScorpion').innerHTML = `<svg viewBox="0 0 100 100" fill="none" stroke="#d9a25a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  <ellipse cx="50" cy="62" rx="12" ry="16"/><circle cx="50" cy="42" r="7"/>
+  <path d="M50 78 q0 10 8 14 q10 4 14 -6 q3 -9 -4 -12"/><path d="M68 74 l5 -4 l-1 6"/>
+  <path d="M43 40 q-12 -6 -18 -16 M57 40 q12 -6 18 -16"/><path d="M25 24 l-6 -4 m6 4 l-2 -7 M75 24 l6 -4 m-6 4 l2 -7"/>
+  <path d="M39 56 l-14 -4 M39 62 l-15 2 M39 68 l-13 8 M61 56 l14 -4 M61 62 l15 2 M61 68 l13 8"/></svg>le scorpion`;
+g('cSauterelle').innerHTML = `<svg viewBox="0 0 100 100" fill="none" stroke="#d9a25a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M22 56 q20 -16 52 -8 q8 3 6 9 q-2 5 -10 4 q-28 -2 -48 -5z"/><circle cx="76" cy="52" r="2" fill="#d9a25a"/>
+  <path d="M80 48 q8 -14 14 -18 M78 46 q4 -16 8 -22"/><path d="M40 52 q12 -14 30 -10"/>
+  <path d="M46 58 l-8 18 l-8 -2 M56 59 l4 18 M36 56 q-6 -22 6 -34 l14 32"/></svg>la sauterelle`;
+g('cScorpion').onclick = () => choisir('scorpion');
+g('cSauterelle').onclick = () => choisir('sauterelle');
+let choixFait = false;
+async function choisir(quoi){
+  if (choixFait) return; choixFait = true; audio();
+  if (empreinte(quoi) === CLEFS.coffret){
+    etat.salle = 5; ecrire();
+    g('eau').classList.add('monte'); plic(true); setTimeout(() => plic(true), 900); setTimeout(() => plic(true), 2100);
+    await dors(5600); final(true); g('eau').style.transition = 'height 4s ease'; g('eau').classList.remove('monte');
+  } else {
+    etat.verrou = Date.now() + VERROU_HEURES * 3600 * 1000; ecrire();
+    const e = g('eclair'); e.classList.remove('boum'); void e.offsetWidth; e.classList.add('boum');
+    document.body.classList.add('tremble'); setTimeout(() => document.body.classList.remove('tremble'), 1900);
+    try { navigator.vibrate && navigator.vibrate([400, 100, 600]); } catch(err){}
+    const a = audio(); if (a){ const t = a.currentTime, n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * 2.5, a.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2.5);
+      const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420; const v = a.createGain(); v.gain.value = .9;
+      n.buffer = b; n.connect(f).connect(v).connect(a.destination); n.start(t); }
+    await dors(1600); choixFait = false; lancerVerrou();
+  }
+}
+let verrouId = null;
+function lancerVerrou(){
+  montrer('verrou');
+  const tic = () => { const reste = etat.verrou - Date.now();
+    if (reste <= 0){ clearInterval(verrouId); etat.verrou = 0; ecrire(); montrer('ch4'); return; }
+    g('compte').textContent = [Math.floor(reste/3.6e6), Math.floor(reste%3.6e6/6e4), Math.floor(reste%6e4/1e3)].map(n => String(n).padStart(2,'0')).join(':'); };
+  tic(); clearInterval(verrouId); verrouId = setInterval(tic, 1000);
+}
+
+/* ============ Final ============ */
+function final(premiere){
+  montrer('final'); g('furet').classList.remove('la');
+  const r = g('revelation'); r.innerHTML = '';
+  let i = 0;
+  'BON RETOUR | CHEZ TOI'.split(' ').forEach((mot, k) => { if (mot === '|') return r.appendChild(document.createElement('br')); if (k) r.appendChild(document.createTextNode(' '));
+    const m = document.createElement('span'); m.style.cssText = 'display:inline-block;white-space:nowrap;opacity:1;animation:none';
+    [...mot].forEach(c => { const s = document.createElement('span'); s.textContent = c; s.style.animationDelay = (0.8 + (i++)*0.16) + 's'; m.appendChild(s); });
+    r.appendChild(m); });
+  if (premiere){ const v = g('voix2'); try { v.muted = false; v.currentTime = 0; v.play().catch(() => {}); } catch(e){} }
+  setTimeout(() => { g('apres').style.opacity = 1; g('reecouter').style.opacity = 1; }, 4800);
+}
+g('reecouter').onclick = () => { const v = g('voix2'); try { v.muted = false; v.currentTime = 0; v.play().catch(() => {}); } catch(e){} };
+
+/* ============ Le furet (indices pour le livre) ============ */
+const INDICES = [
+  'Garnier n\'est pas un nom de famille. C\'est une adresse, à Paris.',
+  'Christine chante. Sous le lac, quelqu\'un l\'écoute.',
+  'Un masque, un lustre qui tombe, une loge n° 5. Gaston savait tout ça.'
+];
+function indicesDispo(){ if (!etat.debutLivre || etat.salle !== 3) return []; const m = (Date.now() - etat.debutLivre) / 6e4;
+  return INDICES.filter((_, i) => m >= INDICES_LIVRE_MIN[i]); }
+function majFuret(){ g('furet').classList.toggle('la', g('ch3').classList.contains('actif') && indicesDispo().length > 0); }
+g('furet').innerHTML = '<svg viewBox="0 0 80 50" fill="none" stroke="#c9c9d3" stroke-width="1.6" stroke-linecap="round"><path d="M8 34c8-10 22-12 36-10 8 1 14-2 18-8 4 2 7 6 6 10-1 3-4 4-8 4-6 6-18 10-32 10-8 0-16-2-20-6z"/><path d="M8 34c-4 2-6 6-4 10"/><circle cx="64" cy="22" r="1.4" fill="#ff2b3c" stroke="none"/><path d="M60 15l2-4 3 4"/><path d="M24 42l-2 6M44 42l2 6"/></svg>';
+g('furet').onclick = () => { const b = g('bulle'); if (b.classList.contains('on')) return b.classList.remove('on');
+  b.innerHTML = indicesDispo().map(t => `<p>${t}</p>`).join(''); b.classList.add('on'); };
+setInterval(majFuret, 20000);
+
+/* ============ Runes flottantes ============ */
+const RUNES = { r1:'M10 2V28M10 12L4 4M10 12L16 4', r2:'M10 2V28M10 18L4 26M10 18L16 26', r3:'M10 2V28M4 10L10 2L16 10', r4:'M4 28L16 12L10 3L4 12L16 28',
+  r5:'M10 4V28M6 4H14', r6:'M4 28V4L10 12L16 4V28', r7:'M4 4L16 28M16 4L4 28', r8:'M4 4V28M16 4V28M4 4L16 28M16 4L4 28', r9:'M10 3L16 15.5L10 28L4 15.5Z',
+  r10:'M10 2V28M4 8L16 22M16 8L4 22', r11:'M10 2V28M10 10L4 4M10 10L16 4M10 20L4 26M10 20L16 26', r12:'M4 28V4L16 16M16 28V4L4 16' };
+(function(){ const ether = g('ether'), cles = Object.keys(RUNES), n = innerWidth < 600 ? 12 : 22;
+  for (let i = 0; i < n; i++){ const el = document.createElement('div'); el.className = 'rune-vol';
+    el.innerHTML = `<svg viewBox="0 0 20 30"><path d="${RUNES[cles[i % cles.length]]}" fill="none" stroke="#ff2b3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    el.style.width = hasard(18, 46) + 'px'; el.style.left = hasard(-2, 96) + '%'; el.style.top = hasard(30, 105) + '%';
+    el.style.setProperty('--d', hasard(16, 34).toFixed(1) + 's'); el.style.setProperty('--r', (-hasard(0, 30)).toFixed(1) + 's');
+    el.style.setProperty('--dx', hasard(-60, 60).toFixed(0) + 'px'); el.style.setProperty('--a0', hasard(-25, 25).toFixed(0) + 'deg');
+    el.style.setProperty('--a1', hasard(-90, 90).toFixed(0) + 'deg'); el.style.setProperty('--s', hasard(.7, 1.3).toFixed(2)); el.style.setProperty('--o', hasard(.18, .5).toFixed(2));
+    ether.appendChild(el); } })();
+
+/* ============ Pensées captées ============ */
+const PENSEES = [
+  'Il faut racheter des ampoules. Toutes. Elles regardent.', 'Le lait a tourné. Comme le Prince.', 'Qui a déplacé ma chaise ?',
+  'Quelqu\'un fredonne dans les tuyaux. Juste, cette fois.', 'Le lustre a encore grincé.', 'Il pleuvra mardi. Il pleut toujours mardi.',
+  'Quelqu\'un a laissé une rose sur la marche.', 'Les livres ne se ferment jamais vraiment.', 'Elle descend. Je l\'entends descendre.',
+  'Ne pas oublier : répondre à la lettre de 1874.', 'Le voisin du dessus marche à l\'envers.', 'Compter les marches. Il y en a toujours une de trop.',
+  'Mardi. Ne pas oublier mardi.', 'Le furet a encore volé une chaussette.', 'Les égouts sentent la cire, ce soir.'
+];
+(function(){
+  const zone = g('pensees'); let sac = [];
+  const suivante = () => { if (!sac.length) sac = PENSEES.slice().sort(() => Math.random() - .5); return sac.pop(); };
+  const OBST = 'h1,.voix,.chiffre,.consigne,.bassin,.lettre,.orgue,.manche,.saisie,.coffrets,.bouton,.incantation,.sceau,.compte,.revelation,.rimes,.boucle,.murmure,.furet,.bulle,.titre-seuil,.sous-titre';
+  const chev = (a, b) => !(a.right < b.left - 8 || a.left > b.right + 8 || a.bottom < b.top - 8 || a.top > b.bottom + 8);
+  function capter(){
+    const ec = document.querySelector('.ecran.actif');
+    if (ec && ec.id !== 'final' && ec.id !== 'silence' && zone.children.length < 2){
+      const p = document.createElement('div'); p.className = 'pensee'; p.textContent = suivante(); p.style.visibility = 'hidden'; zone.appendChild(p);
+      const obs = [...document.querySelectorAll(OBST)].filter(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed').map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
+      [...zone.children].forEach(c => { if (c !== p) obs.push(c.getBoundingClientRect()); });
+      const r0 = p.getBoundingClientRect(); let ok = false;
+      for (let k = 0; k < 30 && !ok; k++){ p.style.left = hasard(8, Math.max(9, innerWidth - r0.width - 8)) + 'px'; p.style.top = hasard(8, Math.max(9, innerHeight - r0.height - 8)) + 'px';
+        ok = !obs.some(o => chev(p.getBoundingClientRect(), o)); }
+      if (ok){ const d = hasard(6.5, 9.5); p.style.setProperty('--d', d.toFixed(1) + 's'); p.style.visibility = ''; setTimeout(() => p.remove(), d * 1000 + 200); } else p.remove();
+    }
+    setTimeout(capter, hasard(3500, 8000));
+  }
+  setTimeout(capter, 3500);
+})();
+
+/* ============ Démarrage ============ */
+montrer(appelee ? 'seuil' : 'silence');
+</script>
+</body>
+</html>

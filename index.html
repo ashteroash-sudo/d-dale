@@ -186,6 +186,12 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 #iLignes{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
   background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 2px,transparent 4px)}
 #iVignette{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.85)}
+.appel{margin-top:30px;opacity:0;transition:opacity 4s}
+.appel.la{opacity:1}
+.appel input{width:min(80vw,320px);background:transparent;border:none;border-bottom:1px solid rgba(179,16,29,.45);color:var(--vif);
+  font-family:var(--mono);font-size:.95rem;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:10px;outline:none;animation:souffle 3.5s ease-in-out infinite}
+.appel input::placeholder{color:rgba(179,16,29,.6)}
+@keyframes souffle{0%,100%{border-bottom-color:rgba(179,16,29,.25)}50%{border-bottom-color:rgba(255,43,60,.8)}}
 </style>
 </head>
 <body>
@@ -266,6 +272,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   <div class="revelation" id="revelation"></div>
   <p class="voix" id="apres" style="opacity:0;transition:opacity 3s">Malkav ne lâche jamais tout à fait ceux qu'il a touchés.</p>
   <button class="bouton" id="reecouter" style="opacity:0;transition:opacity 3s">Réécouter</button>
+  <div class="appel" id="appel">
+    <input id="champAppel" autocomplete="off" spellcheck="false" aria-label="…" placeholder="…">
+  </div>
 </section>
 
 <button class="furet" id="furet" aria-label="Un furet"></button>
@@ -706,6 +715,20 @@ const PENSEES = [
     setTimeout(capter, hasard(3500, 8000));
   }
   setTimeout(capter, 3500);
+})();
+
+/* ============ L'appel vers le Dédale II ============ */
+const APPEL = '3de403137ee279b8b6a8e0b452ecd11a4c092b2fbb06b9bc017e9dc17071364e';
+(function(){
+  const champ = document.getElementById('champAppel');
+  const essai = () => { const v = norme(champ.value); if (!v) return;
+    if (empreinte(v) === APPEL){ try { localStorage.setItem('toile.appel', APPEL); } catch(e){}
+      champ.disabled = true; champ.style.color = '#fff'; setTimeout(() => location.href = 'dedale2.html', 1400); }
+    else { champ.value = ''; champ.classList.remove('secoue'); void champ.offsetWidth; champ.classList.add('secoue'); } };
+  champ.addEventListener('keydown', e => { if (e.key === 'Enter') essai(); });
+  champ.addEventListener('change', essai);
+  new MutationObserver(() => { if (document.getElementById('final').classList.contains('actif')) setTimeout(() => document.getElementById('appel').classList.add('la'), 7000); })
+    .observe(document.getElementById('final'), { attributes:true, attributeFilter:['class'] });
 })();
 
 document.getElementById('reecouter').onclick = () => { const v = document.getElementById('voixMalkav'); try { v.currentTime = 0; v.play().catch(()=>{}); } catch(e){} };
