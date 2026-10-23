@@ -1,2 +1,0 @@
-Objets de la vision du Dédale II : objet-1.jpg à objet-4.jpg (format portrait 9:16).
-Tant qu'ils manquent, la vision est simplement sautée.
